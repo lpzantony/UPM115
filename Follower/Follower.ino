@@ -13,7 +13,6 @@ const uint8_t IN3 = 9;
 const uint8_t IN4 = 8;
 
 const uint8_t MINSPEED = 128; //128
-const uint8_t MAXSPEED = 255;
 int           delay_time = 1000;
 
 //##############################//
@@ -74,7 +73,7 @@ void setup() {
 void loop() {
   //Serial.print(ultrasonic.Ranging(CM)); // CM or INC
   //Serial.println(" cm" );
-  driver.cdrive(driver.FORWARD, 110,100, 2000);
+  driver.cdrive(L298N::FORWARD, 110, 2000);
 
   driver.stop();
   delay(1000); 

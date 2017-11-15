@@ -12,29 +12,31 @@ boolean INVERT = false;
 uint8_t MINSPEED = 0;
 
 
+
 // ---------------------------------------------------------------------------
 // L298N constructor
 // ---------------------------------------------------------------------------
 
-L298N::L298N(uint8_t ena, uint8_t in1, uint8_t in2, uint8_t in3, uint8_t in4, uint8_t enb, boolean invert = false, uint8_t minspeed = 0)
+L298N::L298N(uint8_t ena, uint8_t in1, uint8_t in2, uint8_t in3, uint8_t in4, uint8_t enb, boolean invert, uint8_t minspeed, uint8_t DISCRETE_MV_TIME)
 {
-  pinMode (ena, OUTPUT);
-  pinMode (in1, OUTPUT);
-  pinMode (in2, OUTPUT);
-  pinMode (in3, OUTPUT);
-  pinMode (in4, OUTPUT);
-  pinMode (enb, OUTPUT);
-
-  ENA = ena;
-  ENB = enb;
-
-  IN1 = in1;
-  IN2 = in2;
-  IN3 = in3;
-  IN4 = in4;
-
-  INVERT = invert;
-  MINSPEED = minspeed;
+    pinMode (ena, OUTPUT);
+    pinMode (in1, OUTPUT);
+    pinMode (in2, OUTPUT);
+    pinMode (in3, OUTPUT);
+    pinMode (in4, OUTPUT);
+    pinMode (enb, OUTPUT);
+  
+    ENA = ena;
+    ENB = enb;
+  
+    IN1 = in1;
+    IN2 = in2;
+    IN3 = in3;
+    IN4 = in4;
+  
+    INVERT = invert;
+    MINSPEED = minspeed;
+    this->DISCRETE_MV_TIME = DISCRETE_MV_TIME; 
 }
 
 
@@ -42,40 +44,64 @@ L298N::L298N(uint8_t ena, uint8_t in1, uint8_t in2, uint8_t in3, uint8_t in4, ui
 // L298N Complex Method
 // ---------------------------------------------------------------------------
 
-void L298N::cdrive(uint8_t direction = 0, uint8_t speed = 255, uint8_t slave_ratio = 100, int delay_time = 0)
+void L298N::cdrive(uint8_t direction, uint8_t speed, int delay_time, uint8_t ms_diff)
 {
-  if ( direction==FORWARD  || direction==FORWARD_R  || direction==FORWARD_L  || \
-       direction==BACKWARD || direction==BACKWARD_R || direction==BACKWARD_L || \
-       direction==RIGHT    || direction==LEFT       || \
-       direction==STOP     || direction==BRAKE )
-  {
-    uint8_t master = 255, slave = 0;
+    if ( direction==FORWARD  || direction==FORWARD_R  || direction==FORWARD_L  || \
+         direction==BACKWARD || direction==BACKWARD_R || direction==BACKWARD_L || \
+         direction==RIGHT    || direction==LEFT       || \
+         direction==STOP     || direction==BRAKE )
+    {
+        if(speed > 100) speed = 100;
+        digitalWrite(IN1, bitRead(direction, 3));
+        digitalWrite(IN2, bitRead(direction, 2));
+        digitalWrite(IN3, bitRead(direction, 1));
+        digitalWrite(IN4, bitRead(direction, 0));
 
-    // MINSPEED <= speed_master <= MAXSPEED (255) || 255 if BRAKE
-    if (direction != BRAKE)
-      master = speed;
+        int onTime = DISCRETE_MV_TIME * (speed /100);
+        int offTime = DISCRETE_MV_TIME  - onTime;
 
-    // 0 <= speed_slave <= speed*slave_ratio/100 || speed_slave=speed if slave_ratio==100
-    if (direction != STOP)
-      slave = slave_ratio==100 ? speed : (speed*slave_ratio/100);
-
-    digitalWrite(IN1, bitRead(direction, INVERT?1:3));
-    digitalWrite(IN2, bitRead(direction, INVERT?0:2));
-    digitalWrite(IN3, bitRead(direction, INVERT?3:1));
-    digitalWrite(IN4, bitRead(direction, INVERT?2:0));
-
-    for(int i=0; i< delay_time; i += 4){
-      analogWrite(ENA, 128);
-      analogWrite(ENB, 128);
-      delay(1);
-      analogWrite(ENA, 0);
-      analogWrite(ENB, 0);
-      delay(4);
+        //if moving with a tilt
+        if( direction==FORWARD_R  || direction==FORWARD_L || direction==BACKWARD_R || direction==BACKWARD_L){
+            if(ms_diff > 100) ms_diff = 100;
+            int slaveOnTime = onTime * (ms_diff /100);
+            //int slaveOffTime = offTime * (ms_diff /100);
+            
+            for(int i=0; i< delay_time; i += DISCRETE_MV_TIME){
+                analogWrite((direction==FORWARD_R || direction==BACKWARD_R)? ENA : ENB, STOCK_SPEED);
+                delay(onTime - slaveOnTime);
+                analogWrite((direction==FORWARD_R || direction==BACKWARD_R)? ENB : ENA, STOCK_SPEED);
+                delay(slaveOnTime);
+                analogWrite(ENB, 0);
+                analogWrite(ENA, 0);                
+                delay(offTime);
+            }
+        }            
+        //if moving on itself  
+        else if (direction==RIGHT || direction==LEFT ){
+            analogWrite((direction==RIGHT)? ENA : ENB, 0);
+            for(int i=0; i< delay_time; i += DISCRETE_MV_TIME){
+                analogWrite((direction==RIGHT)? ENB : ENA, STOCK_SPEED);
+                delay(onTime);
+                analogWrite((direction==RIGHT)? ENB : ENA, 0);
+                delay(offTime);
+            }
+        }
+        //if moving in a straight line
+        else{
+            for(int i=0; i< delay_time; i += DISCRETE_MV_TIME){
+                analogWrite(ENA, STOCK_SPEED);
+                analogWrite(ENB, STOCK_SPEED);
+                delay(onTime);
+                analogWrite(ENA, 0);
+                analogWrite(ENB, 0);
+                delay(offTime);
+            }
+        }
     }
-  }
+
 }
 
-void L298N::drive(uint8_t direction = 0, uint8_t speed = 255, uint8_t slave_ratio = 0, int delay_time = 0)
+void L298N::drive(uint8_t direction, uint8_t speed, uint8_t slave_ratio, int delay_time)
 {
   if ( direction==FORWARD  || direction==FORWARD_R  || direction==FORWARD_L  || \
        direction==BACKWARD || direction==BACKWARD_R || direction==BACKWARD_L || \
@@ -109,27 +135,27 @@ void L298N::drive(uint8_t direction = 0, uint8_t speed = 255, uint8_t slave_rati
 // L298N Simple Methods
 // ---------------------------------------------------------------------------
 
-void L298N::stop(boolean brake = false, int delay_time = 100)
+void L298N::stop(boolean brake, int delay_time)
 {
   this->drive(brake ? BRAKE : STOP, 0, 0, delay_time);
 }
 
-void L298N::forward(uint8_t speed = 255, int delay_time = 0)
+void L298N::forward(uint8_t speed, int delay_time)
 {
   this->drive(FORWARD, speed, 100, delay_time);
 }
 
-void L298N::backward(uint8_t speed = 255, int delay_time = 0)
+void L298N::backward(uint8_t speed, int delay_time)
 {
   this->drive(BACKWARD, speed, 100, delay_time);
 }
 
-void L298N::left(uint8_t speed = 255, int delay_time = 200)
+void L298N::left(uint8_t speed, int delay_time)
 {
   this->drive(LEFT, speed, 100, delay_time);
 }
 
-void L298N::right(uint8_t speed = 255, int delay_time = 200)
+void L298N::right(uint8_t speed, int delay_time)
 {
   this->drive(RIGHT, speed, 100, delay_time);
 }
