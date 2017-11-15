@@ -74,15 +74,14 @@ void setup() {
 void loop() {
   //Serial.print(ultrasonic.Ranging(CM)); // CM or INC
   //Serial.println(" cm" );
-  driver.left(MINSPEED, 1000);
-  delay(1000);
-  driver.right(MINSPEED, 1000);
-  
+  driver.cdrive(driver.FORWARD, 110,100, 2000);
 
-  
-
-  
+  driver.stop();
+  delay(1000); 
 
 
 
 }
+
+
+

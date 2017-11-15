@@ -42,6 +42,39 @@ L298N::L298N(uint8_t ena, uint8_t in1, uint8_t in2, uint8_t in3, uint8_t in4, ui
 // L298N Complex Method
 // ---------------------------------------------------------------------------
 
+void L298N::cdrive(uint8_t direction = 0, uint8_t speed = 255, uint8_t slave_ratio = 100, int delay_time = 0)
+{
+  if ( direction==FORWARD  || direction==FORWARD_R  || direction==FORWARD_L  || \
+       direction==BACKWARD || direction==BACKWARD_R || direction==BACKWARD_L || \
+       direction==RIGHT    || direction==LEFT       || \
+       direction==STOP     || direction==BRAKE )
+  {
+    uint8_t master = 255, slave = 0;
+
+    // MINSPEED <= speed_master <= MAXSPEED (255) || 255 if BRAKE
+    if (direction != BRAKE)
+      master = speed;
+
+    // 0 <= speed_slave <= speed*slave_ratio/100 || speed_slave=speed if slave_ratio==100
+    if (direction != STOP)
+      slave = slave_ratio==100 ? speed : (speed*slave_ratio/100);
+
+    digitalWrite(IN1, bitRead(direction, INVERT?1:3));
+    digitalWrite(IN2, bitRead(direction, INVERT?0:2));
+    digitalWrite(IN3, bitRead(direction, INVERT?3:1));
+    digitalWrite(IN4, bitRead(direction, INVERT?2:0));
+
+    for(int i=0; i< delay_time; i += 4){
+      analogWrite(ENA, 128);
+      analogWrite(ENB, 128);
+      delay(1);
+      analogWrite(ENA, 0);
+      analogWrite(ENB, 0);
+      delay(4);
+    }
+  }
+}
+
 void L298N::drive(uint8_t direction = 0, uint8_t speed = 255, uint8_t slave_ratio = 0, int delay_time = 0)
 {
   if ( direction==FORWARD  || direction==FORWARD_R  || direction==FORWARD_L  || \
