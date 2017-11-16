@@ -13,7 +13,6 @@ const uint8_t IN3 = 9;
 const uint8_t IN4 = 8;
 
 const uint8_t MINSPEED = 128; //128
-const uint8_t MAXSPEED = 255;
 int           delay_time = 1000;
 
 //##############################//
@@ -30,8 +29,8 @@ const int MID         = (MAXLEFT - MAXRIGHT) / 2;
 const int STEP_SIZE = (MAXLEFT - MAXRIGHT) / NB_ANGLES;
 
 uint8_t angles[NB_ANGLES];
-
-L298N driver(ENA, IN1, IN2, IN3, IN4, ENB, false, MINSPEED); 
+int DISCRETE_MV_TIME = 6;
+L298N driver(ENA, IN1, IN2, IN3, IN4, ENB, false, MINSPEED, DISCRETE_MV_TIME); 
 Ultrasonic ultrasonic(TRIG,ECHO); // (Trig PIN,Echo PIN)
 Servo myservo;  // create servo object to control a servo
 
@@ -70,19 +69,22 @@ void setup() {
   delay(1000);
   
 }
-
+int speed = 10;
 void loop() {
   //Serial.print(ultrasonic.Ranging(CM)); // CM or INC
   //Serial.println(" cm" );
-  driver.left(MINSPEED, 1000);
-  delay(1000);
-  driver.right(MINSPEED, 1000);
   
+  
+  driver.cdrive(L298N::LEFT, speed, 2000, 90);
+  
+  driver.stop();
+  delay(1000); 
+  speed +=10;
 
-  
-
-  
 
 
 
 }
+
+
+
