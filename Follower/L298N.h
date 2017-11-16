@@ -91,32 +91,32 @@
 
 class L298N
 {
-  public:
-    static const uint8_t FORWARD = 250, \
-                  FORWARD_R = 234, \
-                  FORWARD_L = 218, \
-                  BACKWARD = 245, \
-                  BACKWARD_R = 229, \
-                  BACKWARD_L = 213, \
-                  RIGHT = 249, \
-                  LEFT = 246, \
-                  STOP = 0, \
-                  BRAKE = 255, \
-                  STOCK_SPEED = 128;
-    // constructor
-    L298N(uint8_t ena, uint8_t in1, uint8_t in2, uint8_t in3, uint8_t in4, uint8_t enb, boolean invert = false, uint8_t minspeed = 0, uint8_t DISCRETE_MV_TIME = 6);
-    // complex method (all orders)
-    void cdrive(uint8_t direction = 0, uint8_t speed = 255, int delay_time = 0, uint8_t ms_diff = 50);
-    void drive(uint8_t direction = 0, uint8_t speed = 255, uint8_t slave_percent = 0, int delay_time = 0);
-    // simple methods (basic orders)
-    void stop(boolean brake = false, int delay_time = 100);
-    void forward(uint8_t speed = 255, int delay_time = 0);
-    void backward(uint8_t speed = 255, int delay_time = 0);
-    void left(uint8_t speed = 255, int delay_time = 200);
-    void right(uint8_t speed = 255, int delay_time = 200);
-  private:
-    uint8_t DISCRETE_MV_TIME; //ms
-    
+    public:
+        static const uint8_t FORWARD = 250, \
+                             FORWARD_R = 234, \
+                             FORWARD_L = 218, \
+                             BACKWARD = 245, \
+                             BACKWARD_R = 229, \
+                             BACKWARD_L = 213, \
+                             RIGHT = 249, \
+                             LEFT = 246, \
+                             STOP = 0, \
+                             BRAKE = 255, \
+                             STOCK_SPEED = 128;
+        // constructor
+        L298N(uint8_t ena, uint8_t in1, uint8_t in2, uint8_t in3, uint8_t in4, uint8_t enb, boolean invert = false, uint8_t minspeed = 0, uint8_t DISCRETE_MV_TIME = 6);
+        // complex method (all orders)
+        void cdrive(uint8_t direction = 0, uint8_t speed = 255, int delay_time = 0, uint8_t ms_diff = 50);
+        void drive(uint8_t direction = 0, uint8_t speed = 255, uint8_t slave_percent = 0, int delay_time = 0);
+        // simple methods (basic orders)
+        void stop(boolean brake = false, int delay_time = 100);
+        void forward(uint8_t speed = 255, int delay_time = 0);
+        void backward(uint8_t speed = 255, int delay_time = 0);
+        void left(uint8_t speed = 255, int delay_time = 200);
+        void right(uint8_t speed = 255, int delay_time = 200);
+    private:
+        uint8_t DISCRETE_MV_TIME; //ms
+
 };
 
 #endif
