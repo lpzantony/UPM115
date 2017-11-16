@@ -102,7 +102,7 @@ class L298N
                   LEFT = 246, \
                   STOP = 0, \
                   BRAKE = 255, \
-                  STOCK_SPEED = 128;;
+                  STOCK_SPEED = 128;
     // constructor
     L298N(uint8_t ena, uint8_t in1, uint8_t in2, uint8_t in3, uint8_t in4, uint8_t enb, boolean invert = false, uint8_t minspeed = 0, uint8_t DISCRETE_MV_TIME = 6);
     // complex method (all orders)

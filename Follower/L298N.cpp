@@ -57,19 +57,19 @@ void L298N::cdrive(uint8_t direction, uint8_t speed, int delay_time, uint8_t ms_
         digitalWrite(IN3, bitRead(direction, 1));
         digitalWrite(IN4, bitRead(direction, 0));
 
-        int onTime = DISCRETE_MV_TIME * (speed /100);
+        int onTime = DISCRETE_MV_TIME * (float(speed) /100);
         int offTime = DISCRETE_MV_TIME  - onTime;
 
         //if moving with a tilt
         if( direction==FORWARD_R  || direction==FORWARD_L || direction==BACKWARD_R || direction==BACKWARD_L){
             if(ms_diff > 100) ms_diff = 100;
-            int slaveOnTime = onTime * (ms_diff /100);
-            //int slaveOffTime = offTime * (ms_diff /100);
+            int slaveOnTime = onTime * (float(ms_diff) /100);
+            //int slaveOffTime = offTime * (float(ms_diff) /100);
             
             for(int i=0; i< delay_time; i += DISCRETE_MV_TIME){
-                analogWrite((direction==FORWARD_R || direction==BACKWARD_R)? ENA : ENB, STOCK_SPEED);
-                delay(onTime - slaveOnTime);
                 analogWrite((direction==FORWARD_R || direction==BACKWARD_R)? ENB : ENA, STOCK_SPEED);
+                delay(onTime - slaveOnTime);
+                analogWrite((direction==FORWARD_R || direction==BACKWARD_R)? ENA : ENB, STOCK_SPEED);
                 delay(slaveOnTime);
                 analogWrite(ENB, 0);
                 analogWrite(ENA, 0);                
@@ -80,9 +80,9 @@ void L298N::cdrive(uint8_t direction, uint8_t speed, int delay_time, uint8_t ms_
         else if (direction==RIGHT || direction==LEFT ){
             analogWrite((direction==RIGHT)? ENA : ENB, 0);
             for(int i=0; i< delay_time; i += DISCRETE_MV_TIME){
-                analogWrite((direction==RIGHT)? ENB : ENA, STOCK_SPEED);
+                analogWrite((direction==RIGHT)? ENA : ENB, STOCK_SPEED);
                 delay(onTime);
-                analogWrite((direction==RIGHT)? ENB : ENA, 0);
+                analogWrite((direction==RIGHT)? ENA : ENB, 0);
                 delay(offTime);
             }
         }
