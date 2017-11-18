@@ -136,20 +136,18 @@ What can you do once you have the sensors information and two fully functional m
 
 We decided to only modify the direction of the robot, which was related to the difference between the speed of the two motors.
 
-```math
-\omega_2 - \omega_1 = f(I_{sensor}(t),t)
-```
+![](/img/eq1.PNG)
 
 We decided to use a control system that use the distance of the target as the control variable over the motors's speed.
 
 The basic idea is that when:
-```math
-\frac{dI_{sensor}}{dt}>0
-```
+
+![](/img/eq2.PNG)
+
 We continue to go in the same direction. However, when:
-```math
-\frac{dI_{sensor}}{dt}<0
-```
+
+![](/img/eq3.PNG)
+
 We change the direction.
 
 With this method, we can follow the target pretty efficiently.
@@ -240,14 +238,14 @@ During this time, the server send packets all the time, sending its state. It al
 ##	Problems we encountered
 
 We spent a full day mounting the whole robot:
-- Choosing and connecting the frame
+- Choosing and gluing/connecting the frame
 - Choosing and connecting the H bridge
 - Connecting the Arduino, the Servo and the SR04
 
 Then Antony spent the second day writing the function to control the motors while Antoine was trying to connect his Processing program the the Wi-Fi chip.
 
 For the very last day, the Wi-Fi had a behavior way too random while send/receiving data and connecting. That's why we canceled the Wi-Fi feature of our project.
-We then focused on the ultrasonic following algorithm.
+We then focused on the ultrasonic following algorithm which can be found in the `Follower` directory.
 
 Here is a pic of the robot with the Wi-Fi module mounted:
 
