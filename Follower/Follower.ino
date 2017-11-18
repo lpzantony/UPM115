@@ -6,7 +6,7 @@
 //       Motors constants       //
 //##############################//
 const uint8_t ENA = 12;
-const uint8_t ENB = 7;
+const uint8_t ENB = 2;
 const uint8_t IN1 = 11;
 const uint8_t IN2 = 10;
 const uint8_t IN3 = 9;
@@ -62,6 +62,7 @@ uint8_t curr_dist = 0;
 //         Setup function       //
 //##############################//
 void setup() {
+    pinMode(LED_BUILTIN, OUTPUT);
     // put your setup code here, to run once:
     Serial.begin(9600);
     myservo.attach(SERVO);  // attaches the servo on pin 9 to the servo object
@@ -124,7 +125,7 @@ void setup() {
         state = FORWARD;
         sensor_state = SIDLE;
     }
-    speed = 30;
+    speed = 40;
     myservo.write(MID);
     delay(400);
     prev_dist = min;
@@ -139,12 +140,104 @@ void setup() {
 //##############################//
 //         Loop function       //
 //##############################//
-int cdelay = 500;
+int cdelay = 250;
 int ms_diff = 70;
 int sensor_angle_step = 20;
 uint8_t cpt_stab = 0;
 const uint8_t cpt_stab_lim = 3;
+
+void sensorFollowTarget();
+void followWall();
+void followWallSmartly();
 void loop() {
+    followWall();
+
+}
+
+//##########################################################################//
+//##########################################################################//
+//##########################################################################//
+void followWall() {
+    int min_dist = 9;
+    int max_dist = 20;
+    int MAX_dist = 51;
+    sensor_angle = MID / 2;
+    myservo.write(sensor_angle);
+    curr_dist = ultrasonic.Ranging(CM);
+    Serial.println("curr_dist = " + String(curr_dist));
+    // If we are getting close to the wall
+    if (curr_dist < min_dist) {
+        digitalWrite(LED_BUILTIN, LOW);
+        //driver.cdrive(L298N::FORWARD_L, speed, cdelay, map(curr_dist, 0, min_dist, 30, 100));
+        driver.cdrive(L298N::FORWARD_L, speed, cdelay, 40);
+        
+    }
+    // If we are getting too far away from the wall
+    else if (curr_dist > max_dist) {
+        digitalWrite(LED_BUILTIN, HIGH);
+        //driver.cdrive(L298N::FORWARD_R, speed, cdelay, map(curr_dist, max_dist, MAX_dist, 100, 30));
+        driver.cdrive(L298N::FORWARD_R, speed, cdelay, 40);
+    }
+    else
+}
+
+//##########################################################################//
+//##########################################################################//
+//##########################################################################//
+enum WallState {FOLLOWING_WALL, LOOKING_FRONT};
+WallState wallState = LOOKING_FRONT;
+void followWallSmartly() {
+    int min_dist = 9;
+    int max_dist = 20;
+    int MAX_dist = 51;
+
+    switch (wallState) {
+        case FOLLOWING_WALL:
+            curr_dist = ultrasonic.Ranging(CM);
+            // If we are getting close to the wall
+            if (curr_dist < min_dist) {
+                driver.cdrive(L298N::FORWARD_L, speed, cdelay, map(curr_dist, 0, min_dist, 0, 100));
+            }
+            // If we are getting too far away from the wall
+            else if (curr_dist > max_dist) {
+                driver.cdrive(L298N::FORWARD_R, speed, cdelay, map(curr_dist, max_dist, MAX_dist, 100, 30));
+            }
+            break;
+        case LOOKING_FRONT:
+            sensor_angle = MID;
+            myservo.write(sensor_angle);
+            delay(200); // Let time to the sensor to move
+            curr_dist = ultrasonic.Ranging(CM);
+            if (curr_dist < min_dist) {
+                driver.stop();
+                myservo.write(MAXRIGHT);
+                delay(100);
+                curr_dist = ultrasonic.Ranging(CM);
+                if (curr_dist > 40)
+                    driver.cdrive(L298N::FORWARD_R, speed, 1000, 40);
+                else
+                    driver.cdrive(L298N::BACKWARD, speed, 1000, 40);
+
+            }
+            else {
+                //Get back to following the wall
+                wallState = FOLLOWING_WALL;
+                sensor_angle = MID / 2;
+                myservo.write(sensor_angle);
+                delay(200);
+            }
+            break;
+    }
+
+}
+
+//##########################################################################//
+//##########################################################################//
+//##########################################################################//
+
+void sensorFollowTarget() {
+
+
     /*
         Serial.print(ultrasonic.Ranging(CM)); // CM or INC
         Serial.println(" cm" );
@@ -157,8 +250,8 @@ void loop() {
 
     switch (sensor_state) {
         case LOOKING_RIGHT:
-            Serial.println("Going right.    prev2 = "+ String(prevprev_dist)+" prev = " + String(prev_dist) + " curr = " + String(curr_dist) + " angle = " + String(sensor_angle));
-            if (prev_dist < curr_dist && prevprev_dist < prev_dist) {
+            Serial.println("Going right.    prev2 = " + String(prevprev_dist) + " prev = " + String(prev_dist) + " curr = " + String(curr_dist) + " angle = " + String(sensor_angle));
+            if (prev_dist < curr_dist ) {
                 sensor_state  = LOOKING_LEFT;
             } else if (prev_dist == curr_dist) {
                 //sensor_state  = SIDLE;
@@ -171,8 +264,8 @@ void loop() {
             }
             break;
         case LOOKING_LEFT:
-            Serial.println("Going left.     prev2 = "+ String(prevprev_dist)+" prev = " + String(prev_dist) + " curr = " + String(curr_dist) + " angle = " + String(sensor_angle));
-            if (prev_dist < curr_dist && prevprev_dist < prev_dist) {
+            Serial.println("Going left.     prev2 = " + String(prevprev_dist) + " prev = " + String(prev_dist) + " curr = " + String(curr_dist) + " angle = " + String(sensor_angle));
+            if (prev_dist < curr_dist ) {
                 sensor_state  = LOOKING_RIGHT;
             } else if (prev_dist == curr_dist) {
                 //sensor_state  = SIDLE;
@@ -187,7 +280,7 @@ void loop() {
         case SIDLE:
             if (prev_dist != curr_dist)
                 sensor_state  = LOOKING_RIGHT;
-            Serial.println("Going no where. prev2 = "+ String(prevprev_dist)+" prev = " + String(prev_dist) + " curr = " + String(curr_dist) + " angle = " + String(sensor_angle));
+            Serial.println("Going no where. prev2 = " + String(prevprev_dist) + " prev = " + String(prev_dist) + " curr = " + String(curr_dist) + " angle = " + String(sensor_angle));
             break;
     }
     if (cpt_stab >= cpt_stab_lim) {
@@ -221,8 +314,6 @@ void loop() {
             //delay(cdelay);
             break;
     }
-
 }
-
 
 
