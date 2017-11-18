@@ -62,10 +62,15 @@ void L298N::cdrive(uint8_t direction, uint8_t speed, int delay_time, uint8_t ms_
 
         //if moving with a tilt
         if ( direction == FORWARD_R  || direction == FORWARD_L || direction == BACKWARD_R || direction == BACKWARD_L) {
+
+            // ms_diff variable represents the amount
+            //  of time (in percent) spent at STOCK_SPEED by the slower wheel
+            //  compared to the faster wheel. Setting this variable
+            // to 100 will have the same behaviour than FORWARD/BACKWARD
             if (ms_diff > 100) ms_diff = 100;
             int slaveOnTime = onTime * (float(ms_diff) / 100);
-            //int slaveOffTime = offTime * (float(ms_diff) /100);
 
+            // Generating a PWM behavior on the PWM output
             for (int i = 0; i < delay_time; i += DISCRETE_MV_TIME) {
                 analogWrite((direction == FORWARD_R || direction == BACKWARD_R) ? ENB : ENA, STOCK_SPEED);
                 delay(onTime - slaveOnTime);

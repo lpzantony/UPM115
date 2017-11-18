@@ -12,7 +12,7 @@ const uint8_t IN2 = 10;
 const uint8_t IN3 = 9;
 const uint8_t IN4 = 8;
 
-int           speed             = 10;
+int           speed;
 const uint8_t MINSPEED          = 128; //128
 int           DISCRETE_MV_TIME  = 6; //discrete time shared between ON and OFF mode for motors. (PWM squared)
 
@@ -68,6 +68,8 @@ void setup() {
     myservo.attach(SERVO);  // attaches the servo on pin 9 to the servo object
     myservo.write(MAXRIGHT);   // 255 max left, 30 min right, 109 mid
     delay(1000);
+
+    // Doing a preliminary US scan to find the nearest object
     int angle = MAXRIGHT;
     for (int i = 0; i < NB_ANGLES; i++) angles[i] = 255;
     for (int i = 0; i < NB_ANGLES; i++) {
@@ -77,6 +79,7 @@ void setup() {
         delay(100);
 
     }
+    // Debugging the scan results
     char str[4] = "";
     for (int i = 0; i < NB_ANGLES ; i++) {
         sprintf(str, "%-3d", i);
@@ -93,8 +96,8 @@ void setup() {
         Serial.print(String(str) + " ");
     }
     Serial.println();
-    Serial.println("Hello");
 
+    //Looking for the angle of the nearest object
     uint8_t min  = 255;
     uint8_t max  = 0;
     uint8_t min_index  = NB_ANGLES + 1;
@@ -107,6 +110,9 @@ void setup() {
             max  = angles[i];
         }
     }
+
+    // Now we know the angle and the distance of the nearest object,
+    // we set our loop() variables
     target_dist = min;
     if (min_index >= NB_ANGLES + 1) {
         state = FORWARD;
@@ -150,100 +156,6 @@ void sensorFollowTarget();
 void followWall();
 void followWallSmartly();
 void loop() {
-    followWall();
-
-}
-
-//##########################################################################//
-//##########################################################################//
-//##########################################################################//
-void followWall() {
-    int min_dist = 9;
-    int max_dist = 20;
-    int MAX_dist = 51;
-    sensor_angle = MID / 2;
-    myservo.write(sensor_angle);
-    curr_dist = ultrasonic.Ranging(CM);
-    Serial.println("curr_dist = " + String(curr_dist));
-    // If we are getting close to the wall
-    if (curr_dist < min_dist) {
-        digitalWrite(LED_BUILTIN, LOW);
-        //driver.cdrive(L298N::FORWARD_L, speed, cdelay, map(curr_dist, 0, min_dist, 30, 100));
-        driver.cdrive(L298N::FORWARD_L, speed, cdelay, 40);
-        
-    }
-    // If we are getting too far away from the wall
-    else if (curr_dist > max_dist) {
-        digitalWrite(LED_BUILTIN, HIGH);
-        //driver.cdrive(L298N::FORWARD_R, speed, cdelay, map(curr_dist, max_dist, MAX_dist, 100, 30));
-        driver.cdrive(L298N::FORWARD_R, speed, cdelay, 40);
-    }
-    else
-}
-
-//##########################################################################//
-//##########################################################################//
-//##########################################################################//
-enum WallState {FOLLOWING_WALL, LOOKING_FRONT};
-WallState wallState = LOOKING_FRONT;
-void followWallSmartly() {
-    int min_dist = 9;
-    int max_dist = 20;
-    int MAX_dist = 51;
-
-    switch (wallState) {
-        case FOLLOWING_WALL:
-            curr_dist = ultrasonic.Ranging(CM);
-            // If we are getting close to the wall
-            if (curr_dist < min_dist) {
-                driver.cdrive(L298N::FORWARD_L, speed, cdelay, map(curr_dist, 0, min_dist, 0, 100));
-            }
-            // If we are getting too far away from the wall
-            else if (curr_dist > max_dist) {
-                driver.cdrive(L298N::FORWARD_R, speed, cdelay, map(curr_dist, max_dist, MAX_dist, 100, 30));
-            }
-            break;
-        case LOOKING_FRONT:
-            sensor_angle = MID;
-            myservo.write(sensor_angle);
-            delay(200); // Let time to the sensor to move
-            curr_dist = ultrasonic.Ranging(CM);
-            if (curr_dist < min_dist) {
-                driver.stop();
-                myservo.write(MAXRIGHT);
-                delay(100);
-                curr_dist = ultrasonic.Ranging(CM);
-                if (curr_dist > 40)
-                    driver.cdrive(L298N::FORWARD_R, speed, 1000, 40);
-                else
-                    driver.cdrive(L298N::BACKWARD, speed, 1000, 40);
-
-            }
-            else {
-                //Get back to following the wall
-                wallState = FOLLOWING_WALL;
-                sensor_angle = MID / 2;
-                myservo.write(sensor_angle);
-                delay(200);
-            }
-            break;
-    }
-
-}
-
-//##########################################################################//
-//##########################################################################//
-//##########################################################################//
-
-void sensorFollowTarget() {
-
-
-    /*
-        Serial.print(ultrasonic.Ranging(CM)); // CM or INC
-        Serial.println(" cm" );
-        delay(500);
-    */
-
     //=======> Sensor motor managements
 
     curr_dist = ultrasonic.Ranging(CM);
@@ -297,23 +209,22 @@ void sensorFollowTarget() {
 
     switch (state) {
         case IDLE:
-            //driver.stop();
-            //delay(cdelay);
+            driver.stop();
+            delay(cdelay);
             break;
         case FORWARD:
-            //driver.cdrive(L298N::FORWARD, speed, cdelay);
+            driver.cdrive(L298N::FORWARD, speed, cdelay);
             break;
         case FORWARD_LEFT:
-            //driver.cdrive(L298N::FORWARD_L, speed, cdelay, ms_diff);
+            driver.cdrive(L298N::FORWARD_L, speed, cdelay, ms_diff);
             break;
         case FORWARD_RIGHT:
-            //driver.cdrive(L298N::FORWARD, speed, cdelay, ms_diff);
+            driver.cdrive(L298N::FORWARD, speed, cdelay, ms_diff);
             break;
         case CLOSE_ENOUGH:
-            //driver.stop();
-            //delay(cdelay);
+            driver.stop();
+            delay(cdelay);
             break;
     }
+
 }
-
-

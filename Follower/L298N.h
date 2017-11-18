@@ -104,7 +104,17 @@ class L298N
                              BRAKE = 255, \
                              STOCK_SPEED = 128;
         // constructor
-        L298N(uint8_t ena, uint8_t in1, uint8_t in2, uint8_t in3, uint8_t in4, uint8_t enb, boolean invert = false, uint8_t minspeed = 0, uint8_t DISCRETE_MV_TIME = 6);
+        L298N(
+              uint8_t ena
+            , uint8_t in1
+            , uint8_t in2
+            , uint8_t in3
+            , uint8_t in4
+            , uint8_t enb
+            , boolean invert = false
+            , uint8_t minspeed = 0
+            , uint8_t DISCRETE_MV_TIME = 6
+        );
         // complex method (all orders)
         void cdrive(uint8_t direction = 0, uint8_t speed = 255, int delay_time = 0, uint8_t ms_diff = 50);
         void drive(uint8_t direction = 0, uint8_t speed = 255, uint8_t slave_percent = 0, int delay_time = 0);
